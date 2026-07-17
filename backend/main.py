@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.routes.whatsapp import router as whatsapp_router
 
 app = FastAPI()
 
@@ -6,6 +7,6 @@ app = FastAPI()
 def health_check():
     return {"status": "ok"}
 
-from app.routes.whatsapp import router as whatsapp_router
+
 app.include_router(whatsapp_router)
 

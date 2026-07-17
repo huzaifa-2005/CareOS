@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, Response
 from twilio.twiml.messaging_response import MessagingResponse
+from app.services.rule_based import handle_rule_based
 
 router = APIRouter()
 
@@ -12,7 +13,14 @@ async def whatsapp_webhook(request: Request):
 
     # TODO: pass from_number, body into your intent classifier / rule-based flow here
 
-    reply_text = f"Received: {body}"  # placeholder until routing logic exists
+    rule_response = handle_rule_based(body)
+
+    if rule_response:
+        reply_text = rule_response
+    else:
+        # No rule matched — this is where the intent classifier /
+        # RAG-LLM pipeline will plug in (next subtasks)
+        reply_text = "Let me connect you to more detailed help..."  # temporary placeholder
 
     twiml = MessagingResponse()
     twiml.message(reply_text)

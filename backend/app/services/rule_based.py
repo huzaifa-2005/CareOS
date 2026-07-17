@@ -6,7 +6,7 @@ FAQ_RULES = {
     ("timing", "timings", "hours", "open", "close"): 
         "Our clinic is open Mon–Sat, 10 AM to 8 PM.",
     ("location", "address", "where"): 
-        "We're located at [Clinic Address], Karachi.",
+        "We're located at Gulshan-e-Iqbal, University Road, Karachi.",
     ("fee", "fees", "cost", "price", "charges"): 
         "Consultation fee is Rs. 2000. It may vary by doctor.",
     ("doctor", "doctors", "available"): 

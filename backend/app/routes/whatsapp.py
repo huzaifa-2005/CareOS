@@ -3,6 +3,8 @@ from twilio.twiml.messaging_response import MessagingResponse
 from app.services.patient_service import get_or_create_patient
 from app.services.conversation_service import save_conversation
 from app.services.intent_classifier import classify_and_respond
+from app.services.booking_session_service import get_session
+from app.services.booking_flow_service import handle_booking_flow, is_booking_trigger
 
 router = APIRouter()
 
@@ -35,7 +37,13 @@ async def whatsapp_webhook(request: Request):
 
     
 
-    intent_route, reply_text = classify_and_respond(body, clinic_id)
+    active_session = get_session(patient_id)
+
+    if active_session or is_booking_trigger(body):
+        reply_text = handle_booking_flow(clinic_id, patient_id, body)
+        intent_route = None  # not rule-based or rag_llm — it's structured flow
+    else:
+        intent_route, reply_text = classify_and_respond(body, clinic_id)
 
     save_conversation(clinic_id, patient_id, body, "inbound", intent_route)
     save_conversation(clinic_id, patient_id, reply_text, "outbound", None)

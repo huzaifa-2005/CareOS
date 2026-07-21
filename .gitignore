@@ -38,3 +38,5 @@ coverage/
 .idea/
 .DS_Store
 Thumbs.db
+
+backend/app/data/faiss_langchain_index/

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Request, Response
 from twilio.twiml.messaging_response import MessagingResponse
-from app.services.rule_based import handle_rule_based
+from app.services.patient_service import get_or_create_patient
+from app.services.conversation_service import save_conversation
+from app.services.intent_classifier import classify_and_respond
 
 router = APIRouter()
 
@@ -9,19 +11,36 @@ async def whatsapp_webhook(request: Request):
     form_data = await request.form()
     from_number = form_data.get("From")      # e.g. "whatsapp:+923001234567"
     body = form_data.get("Body")             # message text
-    profile_name = form_data.get("ProfileName")  # sender's WhatsApp display name
+    patient_name = form_data.get("ProfileName")  # sender's WhatsApp display name
 
-    # TODO: pass from_number, body into your intent classifier / rule-based flow here
+    # pass from_number, body into your intent classifier / rule-based flow here
 
-    rule_response = handle_rule_based(body)
+    
 
-    if rule_response:
-        reply_text = rule_response
-    else:
+    # if rule_response:
+    #     reply_text = rule_response
+    # else:
         # No rule matched — this is where the intent classifier /
-        # RAG-LLM pipeline will plug in (next subtasks)
-        reply_text = "Let me connect you to more detailed help..."  # temporary placeholder
+        # RAG-LLM pipeline will plug in (next subtasks) 
+        # reply_text = "Let me connect you to more detailed help..."  ( temporary placeholder )
+    
+    
+    
+    # TEMP: hardcode a real clinic_id from your `clinics` table for now —
+    # multi-clinic routing (matching Twilio number -> clinic) isn't built yet.
+   
+    clinic_id = "d98e07aa-6de1-426c-8c13-6a60ddea931b"
 
+    patient_id = get_or_create_patient(clinic_id, from_number, patient_name)
+
+    
+
+    intent_route, reply_text = classify_and_respond(body, clinic_id)
+
+    save_conversation(clinic_id, patient_id, body, "inbound", intent_route)
+    save_conversation(clinic_id, patient_id, reply_text, "outbound", None)
+
+    
     twiml = MessagingResponse()
     twiml.message(reply_text)
 

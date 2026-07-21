@@ -2,3 +2,14 @@ fastapi
 uvicorn[standard]
 twilio
 python-multipart
+supabase
+groq
+
+fastembed
+onnxruntime==1.17.3
+faiss-cpu
+numpy<2
+
+langchain
+langchain-community
+langchain-groq

@@ -3,8 +3,8 @@
 GREETINGS = ["hi", "hello", "hey", "salam", "assalam", "aoa", "asalam"]
 
 FAQ_RULES = {
-    ("timing", "timings", "hours", "open", "close"): 
-        "Our clinic is open Mon–Sat, 10 AM to 8 PM.",
+    ("timing", "timings", "hours", "open", "close", "khulta", "khultay", "waqt"): 
+    "Our clinic is open Mon–Sat, 10 AM to 8 PM.",
     ("location", "address", "where"): 
         "We're located at Gulshan-e-Iqbal, University Road, Karachi.",
     ("fee", "fees", "cost", "price", "charges"): 

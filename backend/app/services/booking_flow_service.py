@@ -2,11 +2,19 @@ from app.services.booking_session_service import get_session, start_session, upd
 from app.services.calendar_service import get_available_slots, create_calendar_event
 from app.services.db import supabase
 from app.services.calendar_service import update_calendar_event
-
+from app.services.email_alert_service import send_urgent_alert
 
 BOOKING_TRIGGERS = ["book appointment", "book", "appointment", "want to book"]
 
 RESCHEDULE_TRIGGERS = ["reschedule", "change appointment", "change my appointment"]
+
+URGENT_KEYWORDS = ["emergency", "urgent", "severe", "bleeding", "can't breathe", "chest pain", "fainted", "accident"]
+
+def detect_urgency(message: str) -> str:
+    msg = message.lower()
+    if any(word in msg for word in URGENT_KEYWORDS):
+        return "urgent"
+    return "normal"
 
 def is_reschedule_trigger(message: str) -> bool:
     msg = message.lower().strip()
@@ -29,8 +37,9 @@ def handle_booking_flow(clinic_id: str, patient_id: str, message: str) -> str:
 
     if step == "ask_treatment":
         data["treatment_type"] = msg
+        data["urgency_level"] = detect_urgency(msg)
         update_session(patient_id, "ask_date", data)
-        return "Great. What date would you like to come in? (format: YYYY-MM-DD)"
+        return "What date would you like to come in? (format: YYYY-MM-DD)"
 
     elif step == "ask_date":
         data["date"] = msg
@@ -63,11 +72,13 @@ def handle_booking_flow(clinic_id: str, patient_id: str, message: str) -> str:
             "clinic_id": clinic_id,
             "patient_id": patient_id,
             "treatment_type": data["treatment_type"],
-            "urgency_level": "normal",
+            "urgency_level": data.get("urgency_level", "normal"),
             "scheduled_at": f"{data['date']}T{data['time']}:00",
             "status": "booked",
             "google_event_id": event_id
         }).execute()
+        if data.get("urgency_level") == "urgent":
+            send_urgent_alert(clinic_id, patient_name, data["treatment_type"])
 
         end_session(patient_id)
         return f"✅ Your appointment is booked for {data['date']} at {data['time']}. See you then!"

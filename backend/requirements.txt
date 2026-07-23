@@ -16,3 +16,7 @@ langchain-groq
 
 google-api-python-client
 google-auth
+
+passlib[bcrypt]
+python-jose[cryptography]
+bcrypt==4.0.1

@@ -10,7 +10,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://careos-web-chat.vercel.app",
+        "https://care-os-web-chat.vercel.app",
         "https://careos-receptionist-dashboard.vercel.app",
         "http://localhost:5500",
         "http://localhost:5501",

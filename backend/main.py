@@ -12,9 +12,10 @@ app.add_middleware(
     allow_origins=[
         "https://care-os-web-chat.vercel.app",
         "https://care-os-receptionist-dashboard.vercel.app",
+        "https://care-os-super-admin.vercel.app/",
         "http://localhost:5500",
-        "http://localhost:5501",
         "http://127.0.0.1:5500",
+        "http://localhost:5501",
         "http://127.0.0.1:5501",
         "http://localhost:5502",
         "http://127.0.0.1:5502",

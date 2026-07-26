@@ -98,3 +98,9 @@ async def create_staff(clinic_id: str, payload: StaffCreateRequest, admin=Depend
         "password_hash": hash_password(payload.password),
     }).execute()
     return {"success": True}
+
+@router.get("/api/admin/clinics/{clinic_id}/feedback")
+async def admin_list_feedback(clinic_id: str, admin=Depends(get_current_admin)):
+    result = supabase.table("feedback").select("*").eq("clinic_id", clinic_id) \
+        .order("created_at", desc=True).execute()
+    return {"feedback": result.data}

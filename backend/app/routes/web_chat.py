@@ -13,6 +13,13 @@ from app.services.booking_flow_service import (
 from app.services.intent_classifier import classify_and_respond
 from app.services.conversation_service import save_conversation
 from app.services.db import supabase
+from app.services.booking_flow_service import (
+    handle_booking_flow, is_booking_trigger,
+    handle_reschedule_flow, is_reschedule_trigger,
+    handle_cancel_flow, is_cancel_trigger,
+    handle_waitlist_flow, is_waitlist_trigger,
+)
+
 
 router = APIRouter()
 
@@ -74,8 +81,16 @@ async def send_message(payload: MessageRequest, patient=Depends(get_current_pati
     if active_session:
         if active_session["flow_type"] == "booking":
             reply_text = handle_booking_flow(clinic_id, patient_id, body)
-        else:
+        elif active_session["flow_type"] == "reschedule":
             reply_text = handle_reschedule_flow(clinic_id, patient_id, body)
+        else:
+            reply_text = handle_waitlist_flow(clinic_id, patient_id, body)
+        intent_route = None
+    elif is_cancel_trigger(body):
+        reply_text = handle_cancel_flow(clinic_id, patient_id)
+        intent_route = None
+    elif is_waitlist_trigger(body):
+        reply_text = handle_waitlist_flow(clinic_id, patient_id, body)
         intent_route = None
     elif is_reschedule_trigger(body):
         reply_text = handle_reschedule_flow(clinic_id, patient_id, body)
@@ -84,7 +99,9 @@ async def send_message(payload: MessageRequest, patient=Depends(get_current_pati
         reply_text = handle_booking_flow(clinic_id, patient_id, body)
         intent_route = None
     else:
-        intent_route, reply_text = classify_and_respond(body, clinic_id)
+        intent_route, reply_text = classify_and_respond(body, clinic_id)    
+
+
 
     save_conversation(clinic_id, patient_id, body, "inbound", intent_route, channel="web")
     save_conversation(clinic_id, patient_id, reply_text, "outbound", None, channel="web")
@@ -102,3 +119,28 @@ async def get_history(patient=Depends(get_current_patient)):
         .execute()
 
     return {"messages": result.data}
+
+
+class FeedbackRequest(BaseModel):
+    rating: int
+    message: str
+
+
+@router.get("/api/web-chat/appointments")
+async def get_my_appointments(patient=Depends(get_current_patient)):
+    patient_id = patient["staff_id"]
+    result = supabase.table("appointments") \
+        .select("*").eq("patient_id", patient_id) \
+        .order("scheduled_at", desc=True).execute()
+    return {"appointments": result.data}
+
+
+@router.post("/api/web-chat/feedback")
+async def submit_feedback(payload: FeedbackRequest, patient=Depends(get_current_patient)):
+    supabase.table("feedback").insert({
+        "clinic_id": patient["clinic_id"],
+        "patient_id": patient["staff_id"],
+        "rating": payload.rating,
+        "message": payload.message,
+    }).execute()
+    return {"success": True}

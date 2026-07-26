@@ -9,7 +9,61 @@ BOOKING_TRIGGERS = ["book appointment", "book", "appointment", "want to book"]
 RESCHEDULE_TRIGGERS = ["reschedule", "change appointment", "change my appointment"]
 
 URGENT_KEYWORDS = ["emergency", "urgent", "severe", "bleeding", "can't breathe", "chest pain", "fainted", "accident"]
+CANCEL_TRIGGERS = ["cancel appointment", "cancel my appointment", "cancel"]
+WAITLIST_TRIGGERS = ["waitlist", "notify me", "earlier slot", "earliest slot"]
 
+def is_cancel_trigger(message: str) -> bool:
+    return any(t in message.lower().strip() for t in CANCEL_TRIGGERS)
+
+def is_waitlist_trigger(message: str) -> bool:
+    return any(t in message.lower().strip() for t in WAITLIST_TRIGGERS)
+
+
+def handle_cancel_flow(clinic_id: str, patient_id: str) -> str:
+    existing = supabase.table("appointments") \
+        .select("id, scheduled_at, google_event_id") \
+        .eq("patient_id", patient_id).eq("status", "booked").execute()
+
+    if not existing.data:
+        return "You don't have any active appointments to cancel."
+
+    appointment = existing.data[0]
+    supabase.table("appointments").update({"status": "cancelled"}) \
+        .eq("id", appointment["id"]).execute()
+
+    return f"Your appointment on {appointment['scheduled_at']} has been cancelled. Let us know if you'd like to book a new one."
+
+
+def handle_waitlist_flow(clinic_id: str, patient_id: str, message: str) -> str:
+    session = get_session(patient_id)
+    msg = message.strip()
+
+    if not session or session.get("flow_type") != "waitlist":
+        start_session(clinic_id, patient_id, "waitlist", "ask_doctor")
+        update_session(patient_id, "ask_doctor", {})
+        return "Which doctor would you like to be notified about? (enter doctor's name)"
+
+    step = session["current_step"]
+    data = session["collected_data"]
+
+    if step == "ask_doctor":
+        data["doctor_name"] = msg
+        update_session(patient_id, "ask_date", data)
+        return "What's your preferred date range? (e.g. 'next week', '2026-08-01 to 2026-08-05')"
+
+    elif step == "ask_date":
+        data["preferred_date"] = msg
+        supabase.table("waitlist_requests").insert({
+            "clinic_id": clinic_id,
+            "patient_id": patient_id,
+            "doctor_name": data["doctor_name"],
+            "preferred_date": data["preferred_date"],
+        }).execute()
+        end_session(patient_id)
+        return f"Got it! We'll email you if an earlier slot with {data['doctor_name']} opens up around {data['preferred_date']}."
+
+    end_session(patient_id)
+    return "Something went wrong, let's start over."
 def detect_urgency(message: str) -> str:
     msg = message.lower()
     if any(word in msg for word in URGENT_KEYWORDS):

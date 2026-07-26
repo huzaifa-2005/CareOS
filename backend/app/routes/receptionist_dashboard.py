@@ -23,6 +23,11 @@ class DoctorCreateRequest(BaseModel):
     specialty: str
     consultation_fee: float
 
+@router.get("/api/receptionist/feedback")
+async def list_feedback(staff=Depends(get_current_staff)):
+    result = supabase.table("feedback").select("*").eq("clinic_id", staff["clinic_id"]) \
+        .order("created_at", desc=True).execute()
+    return {"feedback": result.data}
 
 @router.post("/api/receptionist/login")
 async def login(payload: LoginRequest):

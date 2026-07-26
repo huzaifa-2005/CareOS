@@ -26,4 +26,19 @@ def get_current_admin(authorization: str = Header(...)):
     except HTTPException:
         raise
     except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+def get_current_patient(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid auth header")
+
+    token = authorization.replace("Bearer ", "")
+    try:
+        payload = decode_token(token)
+        if payload.get("role") != "patient":
+            raise HTTPException(status_code=403, detail="Patient access only")
+        return payload  # contains staff_id (=patient_id), clinic_id, role
+    except HTTPException:
+        raise
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token")    

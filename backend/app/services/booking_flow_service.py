@@ -60,7 +60,7 @@ def handle_waitlist_flow(clinic_id: str, patient_id: str, message: str) -> str:
             "preferred_date": data["preferred_date"],
         }).execute()
         end_session(patient_id)
-        return f"Got it! We'll email you if an earlier slot with {data['doctor_name']} opens up around {data['preferred_date']}."
+        return f"Got it! We'll email you if an earlier slot with Dr {data['doctor_name']} opens up around {data['preferred_date']}."
 
     end_session(patient_id)
     return "Something went wrong, let's start over."

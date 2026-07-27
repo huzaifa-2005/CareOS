@@ -189,7 +189,7 @@ def handle_reschedule_flow(clinic_id: str, patient_id: str, message: str) -> str
         update_calendar_event(data["google_event_id"], data["new_date"], data["new_time"])
 
         supabase.table("appointments").update({
-            "scheduled_at": f"{data['date']}T{data['time']}:00",
+            "scheduled_at": f"{data['new_date']}T{data['new_time']}:00",
             "status": "rescheduled"
         }).eq("id", data["appointment_id"]).execute()
 

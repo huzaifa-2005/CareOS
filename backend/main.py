@@ -4,8 +4,14 @@ from app.routes.whatsapp import router as whatsapp_router
 from app.routes.web_chat import router as web_chat_router
 from app.routes.receptionist_dashboard import router as receptionist_router
 from app.routes.super_admin import router as super_admin_router
+from apscheduler.schedulers.background import BackgroundScheduler
+from app.services.reminder_service import check_and_send_reminders
 
 app = FastAPI()
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(check_and_send_reminders, "interval", minutes=5)
+scheduler.start()
 
 app.add_middleware(
     CORSMiddleware,

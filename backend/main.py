@@ -10,7 +10,14 @@ from app.services.reminder_service import check_and_send_reminders
 app = FastAPI()
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(check_and_send_reminders, "interval", minutes=5)
+scheduler.add_job(
+    check_and_send_reminders,
+    "interval",
+    minutes=5,
+    misfire_grace_time=300,  # allow up to 5 min late
+    coalesce=True,           # if multiple missed, just run once
+    max_instances=1
+)
 scheduler.start()
 
 app.add_middleware(
